@@ -1,13 +1,14 @@
 const head = document.getElementById('floatingHead');
 const container = document.querySelector('.character-container');
 const body = document.body;
+const contentDiv = document.querySelector('.content'); 
 const h1 = document.querySelector('h2');
 const p = document.querySelector('.subtitle');
 const finalTag = document.getElementById('finalTag');
 
-// --- SETTINGS ---
+// --- SETTINGS (SPEED BOOSTED) ---
 let stopPoint = 200;
-const scrollSpeed = 0.5;
+const scrollSpeed = 1.9;
 const zoomSpeed = 0.008;
 const maxScroll = 130000;
 
@@ -22,6 +23,7 @@ let chuTagCreated = false;
 let galleryGenerated = false;
 let endingStickerCreated = false;
 
+// --- INJECT CSS ---
 const styleSheet = document.createElement("style");
 styleSheet.innerText = `
     @keyframes floatGallery {
@@ -32,10 +34,17 @@ styleSheet.innerText = `
     .floating-item {
         animation: floatGallery 4s ease-in-out infinite;
     }
+    body {
+        transition: background-color 0.3s ease-in-out !important;
+    }
+    .content {
+        background-color: transparent !important;
+        pointer-events: none;
+    }
 `;
 document.head.appendChild(styleSheet);
 
-// --- 1. GENERATE SCARY EYES (Phase 3) ---
+// --- 1. GENERATE SCARY EYES ---
 function generateEyes() {
     const numEyes = 7;
     const sizeValues = { small: 50, medium: 80, large: 110 }; 
@@ -49,7 +58,7 @@ function generateEyes() {
     
     for (let i = 0; i < numEyes; i++) {
         const eye = document.createElement('img');
-        eye.src = '/html/eye.png'; // Fixed Path
+        eye.src = '/html/eye.png'; 
         eye.className = 'bg-eye';
         const region = regions[i];
         const x = region.x[0] + Math.random() * (region.x[1] - region.x[0]);
@@ -69,7 +78,7 @@ function generateEyes() {
     }
 }
 
-// --- 2. GENERATE CHU STICKERS (Phase 4) ---
+// --- 2. GENERATE CHU STICKERS ---
 function generateChuStickers() {
     const numStickers = 8; 
     const sizeValues = { small: 60, medium: 90, large: 130 }; 
@@ -83,7 +92,7 @@ function generateChuStickers() {
     
     for (let i = 0; i < numStickers; i++) {
         const sticker = document.createElement('img');
-        sticker.src = '/html/chu.png'; // Fixed Path
+        sticker.src = '/html/chu.png'; 
         sticker.className = 'bg-chu'; 
         const region = regions[i % regions.length];
         const x = region.x[0] + Math.random() * (region.x[1] - region.x[0]);
@@ -104,13 +113,13 @@ function generateChuStickers() {
     }
 }
 
-// --- 3. GENERATE GALLERY (Phase 5) ---
+// --- 3. GENERATE GALLERY ---
 function generateGallery() {
     const isMobile = window.innerWidth < 768;
     
     for (let i = 0; i < 10; i++) {
         const img = document.createElement('img');
-        img.src = `/html/chuchu${i+1}.jpg`; // Fixed Path
+        img.src = `/html/chuchu${i+1}.jpg`; 
         img.className = 'gallery-item'; 
         
         let l, t, w, h;
@@ -153,7 +162,7 @@ function generateGallery() {
 
 function createChuTag() {
     const img = document.createElement('img');
-    img.src = '/html/chu_tag.png'; // Fixed Path
+    img.src = '/html/chu_tag.png';
     img.id = 'chuTag';
     img.style.position = 'fixed';
     img.style.top = '50%';
@@ -169,7 +178,7 @@ function createChuTag() {
 
 function createEndingSticker() {
     const img = document.createElement('img');
-    img.src = '/html/chu.png'; // Fixed Path
+    img.src = '/html/chu.png';
     img.id = 'endingSticker';
     img.style.position = 'fixed';
     img.style.top = '50%';
@@ -195,11 +204,9 @@ function updateAnimation(delta) {
     if (currentScroll < 0) currentScroll = 0;
     if (currentScroll > maxScroll) currentScroll = maxScroll;
 
-    // --- PHASE 1 ---
     let headY = Math.min(currentScroll, stopPoint);
     if (head) head.style.transform = `translateY(-${headY}px)`;
 
-    // --- PHASE 2 ---
     let rawZoom = 1;
     let visualZoom = 1;
 
@@ -211,24 +218,35 @@ function updateAnimation(delta) {
         if (visualZoom > 3) head.style.opacity = Math.max(0, 1 - (visualZoom - 3)); 
         else head.style.opacity = 1;
 
+        // --- THE SYNCED TRIGGER POINT ---
+        const triggerPoint = 15; 
+
         if (container) {
             let radius = 0;
             if (visualZoom > 1.1) radius = Math.min(50, (visualZoom - 1.1) * 50);
             if (visualZoom > 3.5) radius = Math.max(0, 50 - ((visualZoom - 3.5) * 25));
             container.style.borderRadius = `${radius}%`;
             container.style.overflow = (radius > 0) ? "hidden" : "visible";
+
+            // --- FADE LOGIC ---
+            if (rawZoom >= triggerPoint) {
+                container.style.opacity = Math.max(0, 1 - (rawZoom - triggerPoint) / 3);
+            } else {
+                container.style.opacity = 1;
+            }
         }
         
-        const triggerPoint = 15;
-        
         if (rawZoom >= triggerPoint) {
+            // --- INSTANT COLOR CHANGE ---
             let targetBG = "#A5678E"; 
+            
+            body.style.backgroundColor = targetBG;
+            if(contentDiv) contentDiv.style.backgroundColor = "transparent";
 
+            // --- HIDE TEXT IMMEDIATELY ---
             if(h1) h1.style.opacity = 0;
             if(p) p.style.opacity = 0;
-            setTimeout(() => { if(container) container.style.opacity = 0; }, 100); 
-
-            // --- PHASE 3 ---
+            
             let chaosOpacity = 1;
             if (rawZoom > 38) {
                 chaosOpacity = Math.max(0, 1 - ((rawZoom - 38) / 7));
@@ -249,7 +267,6 @@ function updateAnimation(delta) {
                 eye.style.transform = `rotate(${rot}deg) scale(${tagScale * 0.8})`; 
             });
 
-            // --- PHASE 4 ---
             const chuStart = 48;
             const chuExitStart = 75; 
             
@@ -285,7 +302,6 @@ function updateAnimation(delta) {
                     sticker.style.transform = `rotate(${rot}deg) scale(${stickerScale})`;
                 });
 
-                // --- PHASE 5 ---
                 const galleryStart = 78; 
                 const endingStart = 115; 
                 
@@ -295,6 +311,8 @@ function updateAnimation(delta) {
 
                 if (rawZoom > endingStart) {
                     targetBG = "#000000"; 
+                    body.style.backgroundColor = targetBG; 
+
                     let fadeOutProgress = (rawZoom - endingStart) / 15;
                     galleryGlobalOpacity = Math.max(0, 1 - fadeOutProgress);
                     blurAmount = Math.min(20, (rawZoom - endingStart) * 0.5);
@@ -311,8 +329,6 @@ function updateAnimation(delta) {
                     const endChu = document.getElementById('endingSticker');
                     if(endChu) endChu.style.opacity = 0;
                 }
-
-                body.style.backgroundColor = targetBG;
 
                 if (rawZoom > galleryStart) {
                     if (!galleryGenerated) { generateGallery(); galleryGenerated = true; }
@@ -357,11 +373,10 @@ function updateAnimation(delta) {
                 stickers.forEach(s => s.style.opacity = 0);
             }
         } else {
-            if(container) {
-                container.style.transition = "opacity 0s";
-                container.style.opacity = 1;
-            }
+            // --- RESET TO BLUE ---
             body.style.backgroundColor = "#051F45";
+            if(contentDiv) contentDiv.style.backgroundColor = "transparent";
+
             if(h1) h1.style.opacity = 1;
             if(p) p.style.opacity = 1;
             if(finalTag) finalTag.style.opacity = 0;
@@ -387,7 +402,6 @@ function updateAnimation(delta) {
 
 window.addEventListener('wheel', (e) => { updateAnimation(e.deltaY); });
 
-// MOBILE FIX
 let startY = 0;
 window.addEventListener('touchstart', (e) => {
     startY = e.touches[0].clientY;
@@ -396,7 +410,8 @@ window.addEventListener('touchstart', (e) => {
 window.addEventListener('touchmove', (e) => {
     e.preventDefault(); 
     const currentY = e.touches[0].clientY;
-    const deltaY = (startY - currentY) * 2.5; 
+    // 👇 SPEED BOOST FOR MOBILE TOO
+    const deltaY = (startY - currentY) * 4.5; 
     updateAnimation(deltaY);
     startY = currentY;
 }, { passive: false });
