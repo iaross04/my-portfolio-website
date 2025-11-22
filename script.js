@@ -8,14 +8,12 @@ const finalTag = document.getElementById('finalTag');
 
 // --- SETTINGS ---
 let stopPoint = 200;
-
-const scrollSpeed = 5.0; 
-
+const scrollSpeed = 5.5;
 const zoomSpeed = 0.008;
-const maxScroll = 24000; 
+const maxScroll = 24000;
 
-const maxZoomLevel = 30; 
-const maxTagScale = 4.0; 
+const maxZoomLevel = 30 
+const maxTagScale = 4.0;
 
 // Flags
 let eyesGenerated = false;
@@ -46,12 +44,14 @@ styleSheet.innerText = `
         touch-action: none; 
         overscroll-behavior: none;
     }
+    /* GPU Optimization */
     .character-container, .gallery-item, .bg-eye, .bg-chu, #finalTag, #chuTag {
         will-change: transform, opacity;
         backface-visibility: hidden;
         transform-style: preserve-3d;
     }
-    #chuTag, .bg-chu, .gallery-item {
+    /* No Transition Conflicts */
+    #chuTag, .bg-chu, .gallery-item, #finalTag {
         transition: none !important; 
     }
     body.end-state, body.end-state * {
@@ -226,7 +226,6 @@ window.addEventListener('touchstart', (e) => {
 window.addEventListener('touchmove', (e) => {
     e.preventDefault(); 
     const currentY = e.touches[0].clientY;
-    // 🚀 MOBILE SPEED BOOST (5.5x)
     const deltaY = (startY - currentY) * 5.5; 
     targetScroll += deltaY;
     if (targetScroll < 0) targetScroll = 0;
@@ -238,7 +237,8 @@ window.addEventListener('touchmove', (e) => {
 function render() {
     currentScroll += (targetScroll - currentScroll) * 0.1;
 
-    if (targetScroll >= maxScroll - 100) {
+    // End Cursor
+    if (targetScroll >= maxScroll - 500) {
         document.body.classList.add('end-state');
     } else {
         document.body.classList.remove('end-state');
@@ -275,6 +275,7 @@ function render() {
         }
         
         if (rawZoom >= triggerPoint) {
+            // Pink BG
             let targetBG = "#A5678E"; 
             body.style.backgroundColor = targetBG;
             if(contentDiv) contentDiv.style.backgroundColor = "transparent";
@@ -282,18 +283,34 @@ function render() {
             if(h1) h1.style.opacity = 0;
             if(p) p.style.opacity = 0;
             
-            let chaosOpacity = 1;
-            if (rawZoom > 38) {
-                chaosOpacity = Math.max(0, 1 - ((rawZoom - 38) / 7));
+            // --- 🔥 FIX: STRICT HI_TAG LIFECYCLE ---
+            let tagOpacity = 0;
+            // Phase 1: Fade In (12-18)
+            if (rawZoom >= 12 && rawZoom < 18) {
+                tagOpacity = (rawZoom - 12) / 6;
+            } 
+            // Phase 2: Visible (18-38)
+            else if (rawZoom >= 18 && rawZoom < 38) {
+                tagOpacity = 1;
+            }
+            // Phase 3: Fade Out (38-45)
+            else if (rawZoom >= 38 && rawZoom < 45) {
+                tagOpacity = 1 - ((rawZoom - 38) / 7);
+            }
+            // Phase 4: Force Hide (45+)
+            else {
+                tagOpacity = 0;
             }
 
             let tagScale = Math.min((rawZoom - triggerPoint) * 0.2, maxTagScale);
 
             if(finalTag) {
-                finalTag.style.opacity = chaosOpacity;
+                finalTag.style.opacity = tagOpacity;
                 finalTag.style.transform = `scale(${tagScale})`;
             }
             
+            // Chaos Eyes (Fades out same time as tag)
+            let chaosOpacity = tagOpacity; 
             if (!eyesGenerated) { generateEyes(); eyesGenerated = true; }
             const eyes = document.querySelectorAll('.bg-eye');
             eyes.forEach(eye => {
@@ -404,11 +421,13 @@ function render() {
                 stickers.forEach(s => s.style.opacity = 0);
             }
         } else {
+            // Reset Blue
             body.style.backgroundColor = "#051F45";
             if(contentDiv) contentDiv.style.backgroundColor = "transparent";
 
             if(h1) h1.style.opacity = 1;
             if(p) p.style.opacity = 1;
+            // FORCE HIDE TAGS
             if(finalTag) finalTag.style.opacity = 0;
             
             document.querySelectorAll('.bg-eye').forEach(e => e.style.opacity = 0);
