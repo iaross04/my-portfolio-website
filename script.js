@@ -8,10 +8,11 @@ const finalTag = document.getElementById('finalTag');
 
 // --- SETTINGS ---
 let stopPoint = 200;
-const scrollSpeed = 2.0; 
-const zoomSpeed = 0.008;
 
-const maxScroll = 22000; 
+const scrollSpeed = 5.0; 
+
+const zoomSpeed = 0.008;
+const maxScroll = 24000; 
 
 const maxZoomLevel = 30; 
 const maxTagScale = 4.0; 
@@ -45,17 +46,14 @@ styleSheet.innerText = `
         touch-action: none; 
         overscroll-behavior: none;
     }
-    /* GPU Optimization */
     .character-container, .gallery-item, .bg-eye, .bg-chu, #finalTag, #chuTag {
         will-change: transform, opacity;
         backface-visibility: hidden;
         transform-style: preserve-3d;
     }
-    /* Ensure transitions are handled by JS to prevent glitching */
-    #chuTag, .bg-chu, .gallery-item, #finalTag {
+    #chuTag, .bg-chu, .gallery-item {
         transition: none !important; 
     }
-    /* End State Cursor (Desktop Only) */
     body.end-state, body.end-state * {
         cursor: not-allowed !important;
     }
@@ -228,7 +226,8 @@ window.addEventListener('touchstart', (e) => {
 window.addEventListener('touchmove', (e) => {
     e.preventDefault(); 
     const currentY = e.touches[0].clientY;
-    const deltaY = (startY - currentY) * 3.5; 
+    // 🚀 MOBILE SPEED BOOST (5.5x)
+    const deltaY = (startY - currentY) * 5.5; 
     targetScroll += deltaY;
     if (targetScroll < 0) targetScroll = 0;
     if (targetScroll > maxScroll) targetScroll = maxScroll;
@@ -253,13 +252,13 @@ function render() {
 
     if (currentScroll > stopPoint) {
         const extraScroll = currentScroll - stopPoint;
-        rawZoom = 1 + (extraScroll * zoomSpeed);
+        rawZoom = 1 + (extraScroll * zoomSpeed); 
         visualZoom = Math.min(rawZoom, maxZoomLevel);
 
         if (visualZoom > 3) head.style.opacity = Math.max(0, 1 - (visualZoom - 3)); 
         else head.style.opacity = 1;
 
-        const triggerPoint = 12;
+        const triggerPoint = 12; 
 
         if (container) {
             let radius = 0;
@@ -268,16 +267,14 @@ function render() {
             container.style.borderRadius = `${radius}%`;
             container.style.overflow = (radius > 0) ? "hidden" : "visible";
 
-            // Fade Out Spiral
             if (rawZoom >= triggerPoint) {
-                container.style.opacity = Math.max(0, 1 - (rawZoom - triggerPoint) / 3);
+                 container.style.opacity = Math.max(0, 1 - (rawZoom - triggerPoint) / 3);
             } else {
-                container.style.opacity = 1;
+                 container.style.opacity = 1;
             }
         }
         
         if (rawZoom >= triggerPoint) {
-            // Pink BG
             let targetBG = "#A5678E"; 
             body.style.backgroundColor = targetBG;
             if(contentDiv) contentDiv.style.backgroundColor = "transparent";
@@ -292,16 +289,8 @@ function render() {
 
             let tagScale = Math.min((rawZoom - triggerPoint) * 0.2, maxTagScale);
 
-            let tagOpacity = 0;
-            if (rawZoom >= 12 && rawZoom < 38) {
-                tagOpacity = Math.min(1, (rawZoom - 12) / 6);
-            }
-            else if (rawZoom >= 38) {
-                tagOpacity = chaosOpacity;
-            }
-
             if(finalTag) {
-                finalTag.style.opacity = tagOpacity;
+                finalTag.style.opacity = chaosOpacity;
                 finalTag.style.transform = `scale(${tagScale})`;
             }
             
@@ -355,7 +344,6 @@ function render() {
                 let driftScale = 1;
 
                 if (rawZoom > endingStart) {
-                    // BLACK BG
                     targetBG = "#000000"; 
                     body.style.backgroundColor = targetBG; 
 
@@ -416,7 +404,6 @@ function render() {
                 stickers.forEach(s => s.style.opacity = 0);
             }
         } else {
-            // Reset Blue
             body.style.backgroundColor = "#051F45";
             if(contentDiv) contentDiv.style.backgroundColor = "transparent";
 
