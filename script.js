@@ -1,20 +1,20 @@
 const head = document.getElementById('floatingHead');
 const container = document.querySelector('.character-container');
 const body = document.body;
-const contentDiv = document.querySelector('.content');
+const contentDiv = document.querySelector('.content'); 
 const h1 = document.querySelector('h2');
 const p = document.querySelector('.subtitle');
 const finalTag = document.getElementById('finalTag');
 
 // --- SETTINGS ---
 let stopPoint = 200;
-const scrollSpeed = 3.5;
+const scrollSpeed = 3.5; 
 const zoomSpeed = 0.008;
 
-const maxScroll = 24000;
+const maxScroll = 24000; 
 
-const maxZoomLevel = 30;
-const maxTagScale = 4.0;
+const maxZoomLevel = 30; 
+const maxTagScale = 4.0; 
 
 // Flags
 let eyesGenerated = false;
@@ -51,9 +51,11 @@ styleSheet.innerText = `
         backface-visibility: hidden;
         transform-style: preserve-3d;
     }
-    #chuTag, .bg-chu, .gallery-item {
+    /* Ensure transitions are handled by JS to prevent glitching */
+    #chuTag, .bg-chu, .gallery-item, #finalTag {
         transition: none !important; 
     }
+    /* End State Cursor (Desktop Only) */
     body.end-state, body.end-state * {
         cursor: not-allowed !important;
     }
@@ -237,8 +239,7 @@ window.addEventListener('touchmove', (e) => {
 function render() {
     currentScroll += (targetScroll - currentScroll) * 0.1;
 
-    // Cursor Trigger (End State)
-    if (targetScroll >= maxScroll - 500) {
+    if (targetScroll >= maxScroll - 100) {
         document.body.classList.add('end-state');
     } else {
         document.body.classList.remove('end-state');
@@ -252,13 +253,13 @@ function render() {
 
     if (currentScroll > stopPoint) {
         const extraScroll = currentScroll - stopPoint;
-        rawZoom = 1 + (extraScroll * zoomSpeed); 
+        rawZoom = 1 + (extraScroll * zoomSpeed);
         visualZoom = Math.min(rawZoom, maxZoomLevel);
 
         if (visualZoom > 3) head.style.opacity = Math.max(0, 1 - (visualZoom - 3)); 
         else head.style.opacity = 1;
 
-        const triggerPoint = 12; 
+        const triggerPoint = 12;
 
         if (container) {
             let radius = 0;
@@ -267,8 +268,9 @@ function render() {
             container.style.borderRadius = `${radius}%`;
             container.style.overflow = (radius > 0) ? "hidden" : "visible";
 
-            if (rawZoom > 8) {
-                container.style.opacity = Math.max(0, 1 - (rawZoom - 8) / 4);
+            // Fade Out Spiral
+            if (rawZoom >= triggerPoint) {
+                container.style.opacity = Math.max(0, 1 - (rawZoom - triggerPoint) / 3);
             } else {
                 container.style.opacity = 1;
             }
@@ -290,8 +292,16 @@ function render() {
 
             let tagScale = Math.min((rawZoom - triggerPoint) * 0.2, maxTagScale);
 
+            let tagOpacity = 0;
+            if (rawZoom >= 12 && rawZoom < 38) {
+                tagOpacity = Math.min(1, (rawZoom - 12) / 6);
+            }
+            else if (rawZoom >= 38) {
+                tagOpacity = chaosOpacity;
+            }
+
             if(finalTag) {
-                finalTag.style.opacity = chaosOpacity;
+                finalTag.style.opacity = tagOpacity;
                 finalTag.style.transform = `scale(${tagScale})`;
             }
             
@@ -313,7 +323,6 @@ function render() {
                 const chuTag = document.getElementById('chuTag');
                 const stickers = document.querySelectorAll('.bg-chu');
 
-                // Snowball Effect
                 let progress = rawZoom - chuStart;
                 let finalChuScale = progress * 0.2; 
                 let rot = progress * 2; 
@@ -346,11 +355,11 @@ function render() {
                 let driftScale = 1;
 
                 if (rawZoom > endingStart) {
-                    // BLACK BG ENDING
+                    // BLACK BG
                     targetBG = "#000000"; 
                     body.style.backgroundColor = targetBG; 
 
-                    let fadeOutProgress = (rawZoom - endingStart) / 20;
+                    let fadeOutProgress = (rawZoom - endingStart) / 15;
                     galleryGlobalOpacity = Math.max(0, 1 - fadeOutProgress);
                     
                     driftScale = Math.max(0, 1 - ((rawZoom - endingStart) * 0.01)); 
